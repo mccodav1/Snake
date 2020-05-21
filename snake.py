@@ -160,8 +160,12 @@ scoreWriter.hideturtle()
 writeScore(scoreWriter, scores)
 win.update()
 
+gameOver = False
 name = win.textinput('Welcome!', 'Enter your name, and press ENTER to begin!')
 while not name:
+    if name is None:
+        gameOver = True
+        break
     name = win.textinput('Invalid Entry!', 'Your name cannot be blank! Enter your name, and press ENTER to begin!')
 
 win.listen()
@@ -198,9 +202,9 @@ win.tracer(1)
 tick = 0
 win.ontimer(increaseTick, TICK_TIME)
 now = tick
-gameOver = False
+askGameOver = False
 
-while not gameOver:
+while not askGameOver and not gameOver:
     win.update()
     currentScore = tick * len(segments)
     if tick > now:
@@ -217,15 +221,15 @@ while not gameOver:
         win.tracer(1)
         win.ontimer(increaseTick, TICK_TIME)
     if abs(head.xcor()) > 275 or abs(head.ycor()) > 275:
-        gameOver = True
+        askGameOver = True
     if segments:
         for segment in segments[3:]:
             if head.distance(segment) < 10:
-                gameOver = True
+                askGameOver = True
     if head.distance(food) < 15:
         bite()
 
-    if gameOver:
+    if askGameOver and not gameOver:
         def blink():
             head.color(RED_COLOR)
             win.tracer(0)
@@ -250,7 +254,7 @@ while not gameOver:
         playAgain = win.textinput('You died!', f'Great job, {name}! '
                                                f'If you want to play again, enter Y! Any other input exits the game.')
         if playAgain.lower() == 'y':
-            gameOver = False
+            askGameOver = False
             score.write('Score: 0')
             tick = 0
             win.ontimer(increaseTick, TICK_TIME)
@@ -270,4 +274,6 @@ while not gameOver:
             segments = []
             win.listen()
         else:
-            turtle.bye()
+            gameOver = True
+    if gameOver:
+        turtle.bye()
