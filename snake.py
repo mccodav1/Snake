@@ -161,6 +161,8 @@ writeScore(scoreWriter, scores)
 win.update()
 
 name = win.textinput('Welcome!', 'Enter your name, and press ENTER to begin!')
+while not name:
+    name = win.textinput('Invalid Entry!', 'Your name cannot be blank! Enter your name, and press ENTER to begin!')
 
 win.listen()
 win.onkeypress(go_up, "w")
@@ -197,6 +199,7 @@ tick = 0
 win.ontimer(increaseTick, TICK_TIME)
 now = tick
 gameOver = False
+
 while not gameOver:
     win.update()
     currentScore = tick * len(segments)
@@ -239,13 +242,32 @@ while not gameOver:
         blink()
         blink()
         blink()
-        name2 = win.textinput('You lost!', f'Great job, {name}!If you want to change your name for records '
-                                           'enter it now, or press ENTER to keep it the same!')
-        if name2:
-            name = name2
         try:
             cursor.execute('INSERT INTO scores (name, score, date) VALUES (?, ?, ?)', (name, currentScore, date.today()))
             connection.commit()
         except Exception as e:
             print(f'Error occurred: {e}')
-        turtle.bye()
+        playAgain = win.textinput('You died!', f'Great job, {name}! '
+                                               f'If you want to play again, enter Y! Any other input exits the game.')
+        if playAgain.lower() == 'y':
+            gameOver = False
+            score.write('Score: 0')
+            tick = 0
+            win.ontimer(increaseTick, TICK_TIME)
+            now = tick
+            head.hideturtle()
+            del head
+            head = turtle.Turtle()
+            head.pu()
+            head.color(SNAKE_COLOR)
+            head.shape('circle')
+            head.setheading(0)
+            for item in segments:
+                item.clear()
+                item.hideturtle()
+            segments.clear()
+            del segments[:]
+            segments = []
+            win.listen()
+        else:
+            turtle.bye()
