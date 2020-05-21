@@ -2,6 +2,8 @@ import turtle
 import random
 import time
 import winsound
+import sqlite3
+from datetime import date
 
 SPEED = 12
 TICK_TIME = 60
@@ -84,6 +86,33 @@ def increaseTick():
     tick += 1
 
 
+def writeScore(turt, scoreList):
+    """
+    Use specified turtle to write a list of high scores.
+    :param turt: Turtle writer
+    :param scoreList: List of scores in format [name, score, date]
+    :return: None
+    """
+    turt.goto(-385, 255)
+    turt.write('RECORD HOLDERS')
+    turt.goto(282, 255)
+    turt.write('SCORE\tDATE')
+    turt.goto(-355, 255)
+    x, y = turt.xcor(), turt.ycor()
+    for record in range(25):
+        turt.goto(x, y - 20)
+        if record < len(scoreList):
+            turt.write(scoreList[record][0])
+        else:
+            turt.write('-----')
+        turt.goto(x+637, y - 20)
+        if record < len(scoreList):
+            turt.write(str(scoreList[record][1]) + '\t' + str(scoreList[record][2]))
+        else:
+            turt.write('-----\t-----')
+        y = y-20
+
+
 win = turtle.Screen()
 win.setup(800, 600)
 win.bgcolor(BACKGROUND_COLOR)
@@ -115,6 +144,20 @@ for side in range(4):
     border.rt(90)
 del border
 
+connection = sqlite3.connect("scores.db")
+cursor = connection.cursor()
+
+cursor.execute('CREATE TABLE IF NOT EXISTS scores (name TEXT, score INTEGER, date DATE)')
+connection.commit()
+
+cursor.execute('SELECT * FROM scores ORDER BY score DESC')
+scores = [[x[0], x[1], x[2]] for x in cursor.fetchall()]
+
+scoreWriter = turtle.Turtle()
+scoreWriter.color(TEXT_COLOR)
+scoreWriter.pu()
+scoreWriter.hideturtle()
+writeScore(scoreWriter, scores)
 win.update()
 
 name = win.textinput('Welcome!', 'Enter your name, and press ENTER to begin!')
@@ -156,11 +199,12 @@ now = tick
 gameOver = False
 while not gameOver:
     win.update()
+    currentScore = tick * len(segments)
     if tick > now:
         win.tracer(0)
         score.clear()
         now = tick
-        score.write('Score: ' + str(tick * len(segments)))
+        score.write('Score: ' + str(currentScore))
         if segments:
             for index in range(len(segments)-1, 0, -1):
                 segments[index].goto(segments[index-1].xcor(), segments[index-1].ycor())
@@ -199,5 +243,9 @@ while not gameOver:
                                            'enter it now, or press ENTER to keep it the same!')
         if name2:
             name = name2
-        print(name)
+        try:
+            cursor.execute('INSERT INTO scores (name, score, date) VALUES (?, ?, ?)', (name, currentScore, date.today()))
+            connection.commit()
+        except Exception as e:
+            print(f'Error occurred: {e}')
         turtle.bye()
